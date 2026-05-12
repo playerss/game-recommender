@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>游戏推荐 | Game Recommender</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+
+    /* ---- Header ---- */
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      padding: 24px 16px;
+      text-align: center;
+      border-bottom: 1px solid #2a2a4a;
+    }
+    header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 1px;
+    }
+    header p {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #999;
+    }
+
+    /* ---- Loading ---- */
+    #loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 16px;
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #333;
+      border-top: 4px solid #6c63ff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loader p {
+      margin-top: 16px;
+      color: #888;
+      font-size: 14px;
+    }
+
+    /* ---- Error ---- */
+    #error-msg {
+      text-align: center;
+      padding: 48px 16px;
+      color: #ff6b6b;
+      font-size: 16px;
+      display: none;
+    }
+
+    /* ---- Grid ---- */
+    #game-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      padding: 24px 16px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    /* ---- Card ---- */
+    .card {
+      background: #1a1a2e;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #2a2a4a;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      animation: fadeIn 0.4s ease forwards;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 32px rgba(108, 99, 255, 0.15);
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    .card-img-wrap {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%; /* 16:9 */
+      overflow: hidden;
+      background: #111;
+    }
+    .card-img-wrap img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .card-img-wrap .no-img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #16213e, #1a1a2e);
+      color: #555;
+      font-size: 40px;
+    }
+
+    .card-body {
+      padding: 14px 16px 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-body .tags {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .tag-source {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .tag-source.threedm { background: #1e3a5f; color: #64b5f6; }
+    .tag-source.ali213 { background: #3a2e1e; color: #ffb74d; }
+
+    .tag-date {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #888;
+      background: #222;
+    }
+
+    .card-body h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-body .desc {
+      font-size: 13px;
+      color: #aaa;
+      line-height: 1.5;
+      flex: 1;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .card-body .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-body .card-footer a {
+      display: inline-block;
+      padding: 6px 14px;
+      background: #6c63ff;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+    .card-body .card-footer a:hover {
+      background: #5a52e0;
+    }
+    .card-body .card-footer .type-tag {
+      font-size: 11px;
+      color: #777;
+      max-width: 48%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ---- Footer ---- */
+    footer {
+      text-align: center;
+      padding: 32px 16px;
+      color: #555;
+      font-size: 13px;
+      border-top: 1px solid #2a2a4a;
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 600px) {
+      header h1 { font-size: 22px; }
+      #game-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 16px 12px;
+      }
+      .card { border-radius: 10px; }
+    }
+    @media (min-width: 601px) and (max-width: 900px) {
+      #game-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>&#127918; 游戏推荐</h1>
+    <p>每日精选 · 多源聚合 · 发现好游戏</p>
+  </header>
+
+  <div id="loader">
+    <div class="spinner"></div>
+    <p>正在加载游戏数据...</p>
+  </div>
+
+  <div id="error-msg"></div>
+
+  <div id="game-grid"></div>
+
+  <footer>
+    Game Recommender &copy; 2026 &mdash; 数据来源：3DM、游侠网
+  </footer>
+
+  <script>
+    (function () {
+      const grid = document.getElementById('game-grid');
+      const loader = document.getElementById('loader');
+      const errorMsg = document.getElementById('error-msg');
+
+      // 创建单个卡片
+      function createCard(game, index) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.animationDelay = (index * 0.05) + 's';
+
+        // 来源标签
+        const sourceClass = game.source === '3DM' ? 'threedm' : 'ali213';
+        const sourceTag = '<span class="tag-source ' + sourceClass + '">' + escapeHtml(game.source) + '</span>';
+        const dateTag = game.date
+          ? '<span class="tag-date">' + escapeHtml(game.date) + '</span>'
+          : '';
+
+        // 图片
+        var imgHtml;
+        if (game.image) {
+          imgHtml = '<img src="' + escapeHtml(game.image) + '" alt="' + escapeHtml(game.title) + '" loading="lazy">';
+        } else {
+          imgHtml = '<div class="no-img">&#127918;</div>';
+        }
+
+        // 类型
+        var typeHtml = game.type
+          ? '<span class="type-tag">' + escapeHtml(game.type) + '</span>'
+          : '';
+
+        // 描述
+        var desc = game.description || '暂无简介';
+
+        card.innerHTML =
+          '<div class="card-img-wrap">' + imgHtml + '</div>' +
+          '<div class="card-body">' +
+            '<div class="tags">' + sourceTag + ' ' + dateTag + '</div>' +
+            '<h3>' + escapeHtml(game.title) + '</h3>' +
+            '<p class="desc">' + escapeHtml(desc) + '</p>' +
+            '<div class="card-footer">' +
+              '<a href="' + escapeHtml(game.url) + '" target="_blank" rel="noopener">查看 &#8599;</a>' +
+              typeHtml +
+            '</div>' +
+          '</div>';
+
+        return card;
+      }
+
+      // 简单 HTML 转义
+      function escapeHtml(str) {
+        if (!str) return '';
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+      }
+
+      // 渲染游戏列表
+      function renderGames(games) {
+        loader.style.display = 'none';
+        if (!games || games.length === 0) {
+          errorMsg.textContent = '未找到游戏数据';
+          errorMsg.style.display = 'block';
+          return;
+        }
+        games.forEach(function (game, i) {
+          grid.appendChild(createCard(game, i));
+        });
+      }
+
+      // 显示错误
+      function showError(msg) {
+        loader.style.display = 'none';
+        errorMsg.textContent = '加载失败: ' + msg;
+        errorMsg.style.display = 'block';
+      }
+
+      // 获取数据（尝试 fetch JSON 数据）
+      fetch('data/games.json')
+        .then(function (res) {
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          return res.json();
+        })
+        .then(function (games) {
+          renderGames(games);
+        })
+        .catch(function (err) {
+          // 如果 fetch 失败（例如 CORS），使用内嵌 fallback 数据
+          console.warn('Fetch failed, trying fallback:', err.message);
+          showError(err.message + '。请使用本地服务器访问以获取完整数据。');
+        });
+    })();
+  </script>
+
+</body>
+</html>
